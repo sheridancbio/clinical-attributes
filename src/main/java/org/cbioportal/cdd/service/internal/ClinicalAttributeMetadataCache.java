@@ -101,15 +101,7 @@ public class ClinicalAttributeMetadataCache {
                 logger.error("resetCache(): failed to pull overrides from repository");
             }
             consecutiveFailedAttempts += 1;
-            if (consecutiveFailedAttempts >= MAX_FAILED_ATTEMPTS || force) {
-                clinicalAttributeCache = null;
-                overridesCache = null;
-                if (consecutiveFailedAttempts >= MAX_FAILED_ATTEMPTS) {
-                    logger.error("resetCache(): failed to pull from repository " + consecutiveFailedAttempts +  " times, Emptying caches");
-                } else {
-                    logger.error("resetCache(force = true): failed to pull from repository, Emptying caches");
-                }
-            }
+            maybeEmptyCacheAndLogEvent(force, consecutiveFailedAttempts);
             return;
         }
         // we succeeded, reset consecutiveFailedAttempts
@@ -134,4 +126,21 @@ public class ClinicalAttributeMetadataCache {
         overridesCache = latestOverridesCache;
         logger.info("resetCache(): refilled overrides cache with " + latestOverrides.size() + " overrides");
     }
+
+    private void maybeEmptyCacheAndLogEvent(boolean force, int consecutiveFailedAttempts) {
+        if (clinicalAttributeCache == null && overridesCache == null) {
+            logger.error("resetCache was unable to pull from repository. The caches remains empty.");
+            return;
+        }
+        if (force || consecutiveFailedAttempts >= MAX_FAILED_ATTEMPTS) {
+            if (force) {
+                logger.error("resetCache(force = true): failed to pull from repository, Emptying caches");
+            } else {
+                logger.error("resetCache(): failed to pull from repository " + consecutiveFailedAttempts +  " times, Emptying caches");
+            }
+            clinicalAttributeCache = null;
+            overridesCache = null;
+        }
+    }
+
 }
